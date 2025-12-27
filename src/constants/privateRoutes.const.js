@@ -1,0 +1,51 @@
+export const PRIVATE_ROUTES = [
+  {
+    path: `/`,
+    key: 'landing-page',
+    label: 'Landing Page',
+    element: 'LandingPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/products`,
+    key: 'products-page',
+    label: 'Products',
+    element: 'ProductsPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/products/:id`,
+    key: 'product-details-page',
+    label: 'Product Details',
+    element: 'ProductDetailsPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/contact`,
+    key: 'contact-page',
+    label: 'Contact Us',
+    element: 'ContactPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/terms-and-conditions`,
+    key: 'terms-and-conditions-page',
+    label: 'Terms and Conditions',
+    element: 'TermsAndConditionsPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/services`,
+    key: 'services-page',
+    label: 'Services',
+    element: 'ServicesPage',
+    showInSidebar: false,
+  },
+  {
+    path: `/projects`,
+    key: 'projects-page',
+    label: 'Projects',
+    element: 'ProjectsPage',
+    showInSidebar: false,
+  },
+];
