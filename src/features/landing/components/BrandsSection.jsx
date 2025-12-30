@@ -1,111 +1,199 @@
-import React, { useRef } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useAnimationFrame, useMotionValue } from 'framer-motion';
 import { useBrandsSection } from '../../../hooks/useBrandsSection';
-import companyLogo from '../../../assets/Company logo.png';
+import companyLogo from '../../../assets/Company_logo.png';
 
 const BrandsSection = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
-  const sectionRef = useRef(null);
-  
-  // Fetch brands section data from CMS
+
   const { brandsData, loading } = useBrandsSection();
-  
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start end', 'end start'],
-  });
 
-  // Use dynamic data if available, otherwise fall back to static content
   const sectionTitle = brandsData ? (isRTL ? brandsData.sectionTitleAr : brandsData.sectionTitleEn) : t('brands.title');
-  const logos = brandsData?.logos || [];
-  
-  // Fallback to static logo if no CMS data
-  const displayLogos = logos.length > 0 ? logos : Array(6).fill({ imageUrl: companyLogo });
 
-  // InfiniteRow Component - renders a single row with infinite scroll effect
-  const InfiniteRow = ({ direction = 'right', speed = 1 }) => {
-    // Calculate movement based on scroll progress
-    // speed determines how fast the row moves relative to scroll
-    const x = useTransform(
-      scrollYProgress,
-      [0, 1],
-      direction === 'right' ? [0, speed * 1000] : [0, -speed * 1000]
-    );
+  const rawLogos = brandsData?.logos || [];
+  const initialLogos = rawLogos.length > 0 ? rawLogos : Array(3).fill({ imageUrl: companyLogo });
 
-    // Get API base URL for images
-    const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const getImageUrl = (imageUrl) => {
-      if (!imageUrl) return companyLogo;
-      // If it's already a full URL, return as is
-      if (imageUrl.startsWith('http')) return imageUrl;
-      // Otherwise, prepend API base URL
-      return `${apiBaseUrl}${imageUrl}`;
-    };
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const getImageUrl = imageUrl => {
+    if (!imageUrl) return companyLogo;
+    if (typeof imageUrl === 'string' && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) return imageUrl;
+
+    const baseUrl = apiBaseUrl.endsWith('/') ? apiBaseUrl.slice(0, -1) : apiBaseUrl;
+    const path = typeof imageUrl === 'string' ? (imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`) : '';
+
+    return `${baseUrl}${path}`;
+  };
+
+  /**
+   * Infinite Row Component
+   */
+  const InfiniteRow = ({ direction = 'left', speed = 50, delay = 0 }) => {
+    const setRef = useRef(null);
+    const [setWidth, setSetWidth] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const isHovering = useRef(false);
+
+    const displayLogos = useMemo(() => {
+      let items = [...initialLogos];
+      if (items.length === 0) return [];
+      while (items.length < 15) {
+        items = [...items, ...initialLogos];
+      }
+      return items;
+    }, [initialLogos]);
+
+    useLayoutEffect(() => {
+      const measure = () => {
+        if (!setRef.current) return;
+        setSetWidth(setRef.current.getBoundingClientRect().width);
+      };
+      measure();
+      const timer = setTimeout(measure, 100);
+      window.addEventListener('resize', measure);
+      return () => {
+        window.removeEventListener('resize', measure);
+        clearTimeout(timer);
+      };
+    }, [displayLogos, i18n.language]);
+
+    const effectiveDirection = useMemo(() => {
+      if (!isRTL) return direction;
+      return direction === 'left' ? 'right' : 'left';
+    }, [direction, isRTL]);
+
+    const multiplier = effectiveDirection === 'left' ? -1 : 1;
+    const x = useMotionValue(0);
+
+    useAnimationFrame((t, delta) => {
+      if (!setWidth) return;
+      if (isDragging || isHovering.current) return;
+
+      const moveBy = ((speed * delta) / 1000) * multiplier;
+      let newX = x.get() + moveBy;
+
+      if (newX <= -setWidth) newX = 0;
+      else if (newX > 0) newX = -setWidth;
+
+      x.set(newX);
+    });
 
     return (
-      <div className="relative w-full overflow-hidden">
+      <motion.div
+        className="relative w-full overflow-visible cursor-grab active:cursor-grabbing perspective-1000"
+        onMouseEnter={() => (isHovering.current = true)}
+        onMouseLeave={() => (isHovering.current = false)}
+        // ROLODEX SLOWED DOWN: Duration changed from 0.8 -> 1.5
+        initial={{ opacity: 0, rotateX: -90 }}
+        whileInView={{ opacity: 1, rotateX: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{
+          duration: 1, // Slower, more majestic
+          delay: delay,
+          type: 'spring',
+          bounce: 0.2,
+        }}
+      >
+        {/* 'group/row' is applied here. It detects if mouse is anywhere on the track */}
         <motion.div
-          className="flex gap-4 md:gap-6"
+          className="flex w-max gap-4 md:gap-6 will-change-transform group/row py-4"
+          // added py-4 to give space for the scaling effect
           style={{ x }}
+          drag="x"
+          dragConstraints={{ left: -10000, right: 10000 }}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={() => setIsDragging(false)}
+          dragElastic={0.05}
+          dragMomentum={false}
         >
-          {/* Render logos 6 times to ensure seamless infinite loop */}
-          {/* Even with extreme scrolling, logos will always be visible */}
-          {[...Array(6)].map((_, groupIndex) => (
-            <React.Fragment key={groupIndex}>
-              {displayLogos.map((logo, logoIndex) => (
-                <div
-                  key={`${groupIndex}-${logoIndex}`}
-                  className="shrink-0 w-[150px] md:w-[200px] h-[150px] md:h-[200px] bg-white border border-[#93C5FD] rounded-lg flex items-center justify-center p-4"
-                >
-                  <img
-                    src={getImageUrl(logo.imageUrl || logo)}
-                    alt={`Brand ${logoIndex + 1}`}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ))}
-            </React.Fragment>
-          ))}
+          <div ref={setRef} className="flex gap-4 md:gap-6">
+            {displayLogos.map((logo, idx) => (
+              <LogoCard key={`a-${idx}`} logo={logo} idx={idx} getImageUrl={getImageUrl} />
+            ))}
+          </div>
+
+          <div className="flex gap-4 md:gap-6" aria-hidden="true">
+            {displayLogos.map((logo, idx) => (
+              <LogoCard key={`b-${idx}`} logo={logo} idx={idx} getImageUrl={getImageUrl} />
+            ))}
+          </div>
         </motion.div>
-      </div>
+      </motion.div>
     );
   };
 
   return (
-    <section
-      ref={sectionRef}
-      className="w-full py-20 md:py-32 bg-[var(--color-bg)]"
-   
-    >
+    <section className="w-full pt-10 md:pt-16 bg-[var(--color-bg)]">
       <div>
-        {/* Title */}
         {!loading && (
           <motion.h2
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 md:mb-16 text-[var(--color-text)]"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
           >
             {sectionTitle}
           </motion.h2>
         )}
 
-        {/* Logo Grid - 3 Rows with different speeds */}
-        <div className="space-y-6 md:space-y-8">
-          {/* Top Row - Moves Right */}
-          <InfiniteRow direction="right" speed={0.6} />
-          
-          {/* Middle Row - Moves Left */}
-          <InfiniteRow direction="left" speed={0.8} />
-          
-          {/* Bottom Row - Moves Right */}
-          <InfiniteRow direction="right" speed={0.7} />
+        <div className="space-y-2 md:space-y-4 overflow-x-hidden">
+          <InfiniteRow direction="right" speed={38} delay={0} />
+          <InfiniteRow direction="left" speed={28} delay={0.2} />
+          <InfiniteRow direction="right" speed={32} delay={0.4} />
         </div>
       </div>
     </section>
+  );
+};
+
+// --- FIXED LOGO CARD ---
+const LogoCard = ({ logo, idx, getImageUrl }) => {
+  const logoImageUrl = logo?.imageUrl || logo;
+  const logoName = logo?.nameEn || logo?.nameAr || `Brand ${idx + 1}`;
+
+  return (
+    <motion.div
+      className="
+        relative 
+        shrink-0 
+        w-[140px] h-[140px] md:w-[160px] md:h-[160px] 
+        bg-white 
+        border border-transparent
+        rounded-2xl 
+        flex items-center justify-center 
+        select-none 
+        overflow-hidden
+        p-6
+        transition-all duration-300 ease-out
+        shadow-sm
+        
+        /* THE FIX: */
+        /* 1. Base State */
+        opacity-100 scale-100 grayscale-0 z-0
+
+        /* 2. Group Hover State (When row is hovered, I fade out) */
+        group-hover/row:opacity-40 group-hover/row:grayscale group-hover/row:scale-95
+
+        /* 3. Self Hover State (When I am hovered, I override everything) */
+        /* using !important to ensure this wins over the group-hover */
+        hover:!opacity-100 
+        hover:!grayscale-0 
+        hover:!scale-110 
+        hover:!z-20 
+        hover:shadow-2xl 
+        hover:border-blue-200
+      "
+    >
+      <img
+        src={getImageUrl(logoImageUrl)}
+        alt={logoName}
+        className="w-full h-full object-contain pointer-events-none"
+        onError={e => (e.currentTarget.src = companyLogo)}
+        draggable={false}
+      />
+    </motion.div>
   );
 };
 

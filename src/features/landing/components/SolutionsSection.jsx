@@ -1,176 +1,239 @@
-import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Plus, ChevronRight } from "lucide-react";
-import { useSolutions } from "../../../hooks/useSolutions";
+import React, { useState, useEffect, memo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Plus, ArrowUpRight, Sparkles } from 'lucide-react';
+import { useSolutions } from '../../../hooks/useSolutions';
+import { formatNumber } from '../../../utils/numberFormat';
 
+// --- Constants & Config ---
+// Desktop: Fixed height (75vh). Mobile: Auto height (grows with content)
+const DEFAULT_HEIGHT = 'h-auto md:h-[75vh] md:min-h-[600px]';
+
+// --- Modular Card Component ---
+const SolutionCard = memo(({ solution, isActive, onClick, language, index }) => {
+  const { titleAr, titleEn, descriptionAr, descriptionEn, imageUrl, tags, extraCount } = solution;
+
+  // Resolve localized text
+  const title = language === 'ar' ? titleAr : titleEn;
+  const desc = language === 'ar' ? descriptionAr : descriptionEn;
+  const parsedTags = Array.isArray(tags) ? tags : typeof tags === 'string' ? JSON.parse(tags || '[]') : [];
+
+  // Image Helper
+  const displayImage = imageUrl ? (imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000${imageUrl}`) : null;
+
+  // --- Stagger Logic (Desktop Only) ---
+  // On mobile, we disable the stagger so cards stack neatly.
+  const isOdd = index % 2 !== 0;
+
+  // Mobile: Always 0 translate. Desktop: Apply stagger.
+  const verticalShift = isActive ? 'translate-y-0' : isOdd ? 'translate-y-0 md:-translate-y-10' : 'translate-y-0 md:translate-y-10';
+
+  // --- Sizing Logic ---
+  // Mobile: Active = Fixed Tall Height, Inactive = Fixed Short Height
+  // Desktop: Active = Full Height, Inactive = 95% Height
+  const mobileHeight = isActive ? 'h-[550px]' : 'h-[100px]';
+  const desktopHeight = isActive ? 'md:h-full' : 'md:h-[95%]';
+
+  // Flex Logic:
+  // Mobile: w-full (block). Desktop: flex-grow logic.
+  const flexState = isActive ? 'w-full md:w-auto md:flex-[3]' : 'w-full md:w-auto md:flex-[1] md:hover:flex-[1.2]';
+
+  return (
+    <div
+      onClick={onClick}
+      style={{ animationDelay: `${index * 150}ms` }}
+      className={`
+        relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] cursor-pointer
+        transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]
+        border border-white/10 shadow-2xl
+        group
+        
+        /* Entrance Animation */
+        animate-fadeInUp opacity-0 fill-mode-forwards
+
+        /* Layout & Sizing */
+        ${flexState}
+        ${mobileHeight} ${desktopHeight}
+        
+        /* Alignment */
+        self-center
+        ${verticalShift}
+
+        /* Opacity on Inactive */
+        ${isActive ? 'opacity-100' : 'opacity-90 md:opacity-80'}
+      `}
+    >
+      {/* --- Dynamic Background Image --- */}
+      {displayImage && (
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <img
+            src={displayImage}
+            alt={title}
+            className={`
+              w-full h-full object-cover
+              transition-transform duration-[10s] ease-linear
+              ${isActive ? 'scale-125 translate-x-2' : 'scale-110 grayscale-[20%] group-hover:scale-100'}
+            `}
+          />
+        </div>
+      )}
+
+      {/* --- Overlays --- */}
+      <div
+        className={`
+        absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent
+        transition-all duration-500
+        ${isActive ? 'opacity-90' : 'opacity-60 group-hover:opacity-40'}
+      `}
+      />
+
+      {/* --- Active Content (Expanded) --- */}
+      <div
+        className={`
+        absolute inset-0 p-6 md:p-12 flex flex-col justify-end
+        transition-all duration-700 delay-100
+        ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}
+      `}
+      >
+        <div className="max-w-3xl">
+          {/* Animated Tags */}
+          <div className="flex flex-wrap gap-2 mb-4 md:mb-6 transform transition-all duration-700 delay-200 translate-y-0 opacity-100">
+            {parsedTags.map((tag, i) => (
+              <span
+                key={i}
+                className="px-3 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wider text-blue-200 bg-blue-500/20 backdrop-blur-md rounded-full border border-blue-400/20"
+              >
+                {language === 'ar' ? tag.textAr : tag.textEn}
+              </span>
+            ))}
+            {extraCount && (
+              <span className="flex items-center gap-1 px-3 py-1 text-[10px] md:text-xs font-bold text-amber-300 bg-amber-500/10 rounded-full border border-amber-500/20">
+                <Sparkles size={10} /> +{formatNumber(extraCount)}
+              </span>
+            )}
+          </div>
+
+          {/* Animated Title */}
+          <h2 className="text-3xl md:text-6xl font-black text-white mb-4 md:mb-6 leading-[0.9] tracking-tight transform transition-all duration-700 delay-300">
+            {title}
+          </h2>
+
+          {/* Animated Description */}
+          {desc && (
+            <div className="overflow-hidden mb-6 md:mb-8">
+              <p className="text-sm md:text-lg text-gray-300/90 leading-relaxed max-w-xl transform transition-all duration-700 delay-500 line-clamp-4 md:line-clamp-none">
+                {desc}
+              </p>
+            </div>
+          )}
+
+          {/* Animated Button */}
+          <div className="transform transition-all duration-700 delay-700">
+            <button className="group/btn relative inline-flex items-center gap-3 px-6 md:px-8 py-3 md:py-4 bg-white text-black rounded-full font-bold text-xs md:text-sm tracking-wide overflow-hidden transition-transform hover:scale-105">
+              <span className="relative z-10">EXPLORE SOLUTION</span>
+              <div className="relative z-10 bg-black text-white rounded-full p-1 transition-transform group-hover/btn:rotate-45">
+                <ArrowUpRight size={14} />
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Inactive Content (Collapsed) --- */}
+      <div
+        className={`
+        absolute inset-0 flex flex-col items-center justify-center
+        transition-all duration-500
+        ${isActive ? 'opacity-0 -translate-y-4' : 'opacity-100 translate-y-0'}
+      `}
+      >
+        {/* Floating Icon - Smaller on Mobile */}
+        <div className="w-10 h-10 md:w-16 md:h-16 rounded-full border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center mb-0 md:mb-6 group-hover:scale-110 transition-transform duration-300 shadow-xl">
+          <Plus className="text-white w-5 h-5 md:w-6 md:h-6" />
+        </div>
+
+        {/* Desktop Vertical Text */}
+        <h3 className="hidden md:block text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 [writing-mode:vertical-rl] rotate-180 tracking-widest uppercase drop-shadow-sm">
+          {title}
+        </h3>
+
+        {/* Mobile Horizontal Text (Absolute positioning to stay centered in the small strip) */}
+        <h3 className="md:hidden absolute left-14 text-lg font-bold text-white text-left px-2 line-clamp-1">{title}</h3>
+      </div>
+    </div>
+  );
+});
+
+// --- Main Section Component ---
 const SolutionsSection = () => {
   const { t, i18n } = useTranslation();
   const { solutions, sectionSettings, loading } = useSolutions();
-  const [activeId, setActiveId] = useState(null); // All cards collapsed by default
+  const [activeId, setActiveId] = useState(null);
 
-  const handleCardClick = (cardId) => {
-    // Toggle: if already active, collapse it; otherwise expand it
-    setActiveId(activeId === cardId ? null : cardId);
-  };
-
-  // Get image URL helper
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `http://localhost:5000${imageUrl}`;
-  };
-
-  // Get title based on language
-  const getTitle = (solution) => {
-    return i18n.language === 'ar' ? solution.titleAr : solution.titleEn;
-  };
-
-  // Get description based on language
-  const getDescription = (solution) => {
-    return i18n.language === 'ar' ? solution.descriptionAr : solution.descriptionEn;
-  };
-
-  // Get section title based on language
-  const getSectionTitle = () => {
-    if (!sectionSettings) return t("solutions.title");
-    return i18n.language === 'ar' ? sectionSettings.sectionTitleAr : sectionSettings.sectionTitleEn;
-  };
-
-  // Parse tags helper
-  const parseTags = (tags) => {
-    if (!tags) return [];
-    if (typeof tags === 'string') {
-      try {
-        return JSON.parse(tags);
-      } catch {
-        return [];
-      }
+  useEffect(() => {
+    if (solutions?.length > 0 && !activeId) {
+      setActiveId(solutions[0].id);
     }
-    return Array.isArray(tags) ? tags : [];
-  };
+  }, [solutions, activeId]);
 
-  // Convert Tailwind height class to pixel value
-  const getHeightValue = (heightClass) => {
-    if (!heightClass) return '632px';
-    // Extract pixel value from classes like "h-[532px]" or "h-[632px]"
-    const match = heightClass.match(/\[(\d+)px\]/);
-    return match ? `${match[1]}px` : '632px';
+  const getSectionTitle = () => {
+    if (!sectionSettings) return t('solutions.title');
+    return i18n.language === 'ar' ? sectionSettings.sectionTitleAr : sectionSettings.sectionTitleEn;
   };
 
   if (loading) {
     return (
-      <section className="w-full py-24 bg-[#020617]">
-        <div className="px-4 md:px-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-          </div>
+      <section className={`w-full bg-[#020617] flex items-center justify-center min-h-[500px]`}>
+        <div className="flex gap-2">
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+          <div className="w-3 h-3 bg-white rounded-full animate-bounce"></div>
         </div>
       </section>
     );
   }
 
-  if (!solutions || solutions.length === 0) {
-    return null;
-  }
+  if (!solutions || solutions.length === 0) return null;
 
   return (
-    <section className="w-full py-24 bg-[#020617]">
-      <div className="px-4 md:px-8">
-        {/* Title */}
-        <h2 className="text-center text-4xl md:text-5xl font-semibold text-white mb-16">
-          {getSectionTitle()}
-        </h2>
+    <section className="relative w-full py-12 md:py-20 bg-[#020617] overflow-hidden mt-10 md:mt-20">
+      <style>
+        {`
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fadeInUp {
+            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          }
+          .fill-mode-forwards { animation-fill-mode: forwards; }
+        `}
+      </style>
 
-        {/* Cards Row - Full Width */}
-        <div className="flex gap-6 w-full">
-          {solutions.map((solution) => {
-            const isActive = solution.id === activeId;
-            const imageUrl = getImageUrl(solution.imageUrl);
-            const tags = parseTags(solution.tags);
+      {/* Background Decor */}
+      <div className="absolute top-0 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-900/10 rounded-full blur-[80px] md:blur-[128px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[128px] pointer-events-none" />
 
-            return (
-              <button
-                key={solution.id}
-                type="button"
-                onClick={() => handleCardClick(solution.id)}
-                className={`
-                  group flex flex-col items-center shrink-0 
-                  transition-all duration-500 ease-out
-                  ${isActive ? "flex-[2]" : "flex-1"}
-                  min-w-0
-                `}
-              >
-                {/* Image card */}
-                <div
-                  className="relative w-full rounded-3xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.35)] cursor-pointer"
-                  style={{
-                    height: getHeightValue(solution.height)
-                  }}
-                >
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt={getTitle(solution)}
-                      className="absolute inset-0 w-full h-full object-cover cursor-pointer pointer-events-auto"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+      {/* Header */}
+      <div className="w-full px-4 md:px-12 mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fadeInUp">
+        <div className="max-w-2xl">
+          <h2 className="text-4xl md:text-7xl font-bold text-white tracking-tighter mb-4">{getSectionTitle()}</h2>
+          <div className="h-1 md:h-2 w-16 md:w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+        </div>
+      </div>
 
-                  {/* Expanded content - shown when card is active */}
-                  {isActive && (
-                    <>
-                      {/* Show more button - Top Center */}
-                      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
-                        <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black/85 text-white text-sm backdrop-blur-sm">
-                          {t("solutions.showMoreDetails")}
-                          <ChevronRight size={16} />
-                        </span>
-                      </div>
-
-                      {/* Bottom content */}
-                      <div className="absolute bottom-6 left-6 right-6 text-white z-10">
-                        <h3 className="text-2xl font-semibold mb-3">
-                          {getTitle(solution)}
-                        </h3>
-                        {getDescription(solution) && (
-                          <p className="text-sm text-white/85 mb-4 max-w-xl">
-                            {getDescription(solution)}
-                          </p>
-                        )}
-                        {(tags.length > 0 || solution.extraCount) && (
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            {tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm"
-                              >
-                                {i18n.language === 'ar' ? tag.textAr : tag.textEn}
-                              </span>
-                            ))}
-                            {solution.extraCount && (
-                              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm">
-                                +{solution.extraCount}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Text + plus UNDER image (for all cards) */}
-                <div className="mt-6 text-center text-white">
-                  <p className="text-xl leading-snug max-w-[200px]">
-                    {getTitle(solution)}
-                  </p>
-                  <div className="mt-4 w-10 h-10 mx-auto rounded-full border border-white flex items-center justify-center group-hover:bg-white transition-colors duration-200 cursor-pointer">
-                    <Plus size={18} className="text-white group-hover:text-[#020617] transition-colors duration-200 cursor-pointer" />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+      {/* Container: Stack Vertically on Mobile, Row on Desktop */}
+      <div className={`w-full px-2 md:px-6 ${DEFAULT_HEIGHT}`}>
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 h-full w-full">
+          {solutions.map((solution, index) => (
+            <SolutionCard
+              key={solution.id}
+              index={index}
+              solution={solution}
+              isActive={activeId === solution.id}
+              onClick={() => setActiveId(solution.id)}
+              language={i18n.language}
+            />
+          ))}
         </div>
       </div>
     </section>

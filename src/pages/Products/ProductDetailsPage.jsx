@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {API} from '../../services/API';
+import { API } from '../../services/API';
 import ProductBackButton from '../../features/productDetails/components/ProductBackButton';
 import ProductImageGallery from '../../features/productDetails/components/ProductImageGallery';
 import ProductInfo from '../../features/productDetails/components/ProductInfo';
@@ -13,7 +13,7 @@ const ProductDetailsPage = () => {
   const { id } = useParams();
   const { i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
-  
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [similarProducts, setSimilarProducts] = useState([]);
@@ -29,8 +29,7 @@ const ProductDetailsPage = () => {
     }
   }, [product?.id]);
 
-
-  const fetchSimilarProducts = async (productId) => {
+  const fetchSimilarProducts = async productId => {
     try {
       const response = await API.get(`/products/${productId}/similar`);
       if (response.data?.success) {
@@ -61,13 +60,12 @@ const ProductDetailsPage = () => {
     }
   };
 
-  const getImageUrl = (imageUrl) => {
+  const getImageUrl = imageUrl => {
     if (!imageUrl) return null;
     if (imageUrl.startsWith('http')) return imageUrl;
     const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
     return `${apiBaseUrl}${imageUrl}`;
   };
-
 
   if (loading) {
     return (
@@ -81,9 +79,7 @@ const ProductDetailsPage = () => {
     return (
       <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[var(--color-text-muted)] text-lg mb-4">
-            {isRTL ? 'المنتج غير موجود' : 'Product not found'}
-          </p>
+          <p className="text-[var(--color-text-muted)] text-lg mb-4">{isRTL ? 'المنتج غير موجود' : 'Product not found'}</p>
           <ProductBackButton />
         </div>
       </div>
@@ -92,9 +88,9 @@ const ProductDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-24 pb-8">
+      <div className=" mx-auto px-4 md:px-8 pt-24 pb-8">
         <ProductBackButton />
-        
+
         <ProductImageGallery product={product} getImageUrl={getImageUrl} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

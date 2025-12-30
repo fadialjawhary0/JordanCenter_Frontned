@@ -1,20 +1,99 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { useCategories } from '../../../hooks/useCategories';
+import { formatNumber } from '../../../utils/numberFormat';
+
+// Animation configuration for scroll-triggered entrance animations
+const ANIMATION_CONFIG = {
+  // Premium easing curves for smooth, editorial feel
+  ease: [0.25, 0.1, 0.25, 1],
+  easeOut: [0.16, 1, 0.3, 1],
+
+  // Timing
+  duration: 1.3,
+  staggerDelay: 0.18, // Delay between items for visual rhythm
+
+  // Transform values
+  initialY: 50,
+  initialScale: 0.88,
+  initialRotateX: 12, // Subtle perspective rotation
+
+  // Perspective
+  perspective: 1200,
+};
+
+// Calculate grid position for stagger timing based on column/row
+const getGridPosition = (gridClasses, index, isMobile) => {
+  if (isMobile) return index;
+
+  // Parse column and row from gridClasses
+  const colMatch = gridClasses.match(/col-start-(\d+)/);
+  const rowMatch = gridClasses.match(/row-start-(\d+)/);
+
+  const col = colMatch ? parseInt(colMatch[1]) - 1 : index % 4;
+  const row = rowMatch ? parseInt(rowMatch[1]) - 1 : Math.floor(index / 4);
+
+  // Stagger by column first, then row for visual rhythm
+  return col + row * 4;
+};
+
+// Container variants for stagger children
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: ANIMATION_CONFIG.staggerDelay,
+      delayChildren: 0.25,
+    },
+  },
+};
+
+// Card entrance variants with Y + scale + perspective
+const cardVariants = (delay = 0) => ({
+  hidden: {
+    opacity: 0,
+    y: ANIMATION_CONFIG.initialY,
+    scale: ANIMATION_CONFIG.initialScale,
+    rotateX: ANIMATION_CONFIG.initialRotateX,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    transition: {
+      duration: ANIMATION_CONFIG.duration,
+      ease: ANIMATION_CONFIG.ease,
+      delay,
+    },
+  },
+});
 
 const CategoriesSection = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const { categories, loading, error } = useCategories();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Get title based on current language
-  const getCategoryTitle = (category) => {
+  const getCategoryTitle = category => {
     return isRTL ? category.titleAr : category.titleEn;
   };
 
   // Construct image URL from backend
-  const getImageUrl = (imageUrl) => {
+  const getImageUrl = imageUrl => {
     if (!imageUrl) return '';
     // If it's already a full URL, return as is
     if (imageUrl.startsWith('http')) return imageUrl;
@@ -23,26 +102,26 @@ const CategoriesSection = () => {
   };
 
   // Parse gridClasses and convert to inline styles (works even if Tailwind purges classes)
-  const parseGridClasses = (classes) => {
+  const parseGridClasses = classes => {
     const style = {};
     if (!classes) return style;
-    
+
     // Parse col-span-X
     const colSpanMatch = classes.match(/col-span-(\d+)/);
     const colSpan = colSpanMatch ? parseInt(colSpanMatch[1]) : null;
-    
+
     // Parse col-start-X
     const colStartMatch = classes.match(/col-start-(\d+)/);
     const colStart = colStartMatch ? parseInt(colStartMatch[1]) : null;
-    
+
     // Parse row-span-X
     const rowSpanMatch = classes.match(/row-span-(\d+)/);
     const rowSpan = rowSpanMatch ? parseInt(rowSpanMatch[1]) : null;
-    
+
     // Parse row-start-X
     const rowStartMatch = classes.match(/row-start-(\d+)/);
     const rowStart = rowStartMatch ? parseInt(rowStartMatch[1]) : null;
-    
+
     // Build gridColumn: if both start and span, use "start / span X", otherwise use individual properties
     if (colStart !== null && colSpan !== null) {
       style.gridColumn = `${colStart} / span ${colSpan}`;
@@ -51,7 +130,7 @@ const CategoriesSection = () => {
     } else if (colSpan !== null) {
       style.gridColumn = `span ${colSpan}`;
     }
-    
+
     // Build gridRow: if both start and span, use "start / span X", otherwise use individual properties
     if (rowStart !== null && rowSpan !== null) {
       style.gridRow = `${rowStart} / span ${rowSpan}`;
@@ -60,13 +139,13 @@ const CategoriesSection = () => {
     } else if (rowSpan !== null) {
       style.gridRow = `span ${rowSpan}`;
     }
-    
+
     return style;
   };
 
   if (loading) {
     return (
-      <section className="w-full py-16 md:py-24 px-4 md:px-8 bg-[var(--color-bg)]">
+      <section className="w-full pt-10 md:pt-16 px-4 md:px-8 bg-[var(--color-bg)]">
         <div className="text-center">
           <p className="text-[var(--color-text)]">Loading categories...</p>
         </div>
@@ -76,7 +155,7 @@ const CategoriesSection = () => {
 
   if (error || !categories || categories.length === 0) {
     return (
-      <section className="w-full py-16 md:py-24 px-4 md:px-8 bg-[var(--color-bg)]">
+      <section className="w-full pt-10 md:pt-16 px-4 md:px-8 bg-[var(--color-bg)]">
         <div className="text-center">
           <p className="text-[var(--color-text)]">Failed to load categories.</p>
         </div>
@@ -85,7 +164,7 @@ const CategoriesSection = () => {
   }
 
   return (
-    <section className="w-full py-16 md:py-24 px-4 md:px-8 bg-[var(--color-bg)]">
+    <section className="w-full pt-10 md:pt-16 px-4 md:px-8 bg-[var(--color-bg)]">
       <div>
         {/* Section Title */}
         <motion.h2
@@ -98,29 +177,33 @@ const CategoriesSection = () => {
           {t('categories.title')}
         </motion.h2>
 
-        <div 
-          className="grid grid-cols-4 gap-2 h-[1300px]"
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-2 md:h-[1300px]"
           style={{
-            gridTemplateRows: 'repeat(4, minmax(0, 1fr))'
+            gridTemplateRows: !isMobile ? 'repeat(4, minmax(0, 1fr))' : 'none',
+            perspective: `${ANIMATION_CONFIG.perspective}px`,
+            transformStyle: 'preserve-3d',
           }}
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2, margin: '100px' }}
         >
           {categories.map((category, index) => {
             const gridClasses = (category.gridClasses || '').trim();
-            const gridStyle = parseGridClasses(gridClasses);
-            
-            // Debug: Log styles for first 2 categories
-            if (index < 2) {
-              console.log(`Category ${index} "${category.titleEn}":`, {
-                gridClasses,
-                computedStyle: gridStyle
-              });
-            }
-            
+            const gridStyle = !isMobile ? parseGridClasses(gridClasses) : {};
+            const gridPosition = getGridPosition(gridClasses, index, isMobile);
+            const staggerDelay = gridPosition * ANIMATION_CONFIG.staggerDelay;
+
             return (
-              <div
+              <motion.div
                 key={category.id}
-                className="group relative overflow-hidden rounded-lg cursor-pointer"
-                style={gridStyle}
+                className="group relative overflow-hidden rounded-lg cursor-pointer md:h-auto h-[300px]"
+                style={{
+                  ...gridStyle,
+                  transformStyle: 'preserve-3d',
+                }}
+                variants={cardVariants(staggerDelay)}
                 data-debug-grid={gridClasses}
               >
                 {/* Image */}
@@ -131,7 +214,7 @@ const CategoriesSection = () => {
                 />
 
                 {/* Initial Bottom Gradient Overlay (Always Visible) */}
-                <div 
+                <div
                   className="absolute bottom-0 left-0 right-0 pointer-events-none"
                   style={{
                     height: '40%',
@@ -141,45 +224,38 @@ const CategoriesSection = () => {
 
                 {/* Default Text Overlay (Bottom Left) */}
                 <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-white transition-all duration-500 group-hover:opacity-0">
-                  <h3 className="text-lg md:text-3xl font-bold mb-1">
-                    {getCategoryTitle(category)}
-                  </h3>
+                  <h3 className="text-lg md:text-3xl font-bold mb-1">{getCategoryTitle(category)}</h3>
                   <p className="text-sm md:text-base font-semibold opacity-90">
-                    +{category.productCount} {t('categories.products')}
+                    +{formatNumber(category.productCount)} {t('categories.products')}
                   </p>
                 </div>
 
                 {/* Hover Overlay (Black Transparent Blurred - Bottom to Top) */}
-                <div 
-                  className="absolute bottom-0 left-0 right-0 backdrop-blur-sm transition-all duration-500 ease-out h-0 group-hover:h-full"
-                  style={{
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.2) 70%, transparent 100%)',
-                  }}
-                />
+                <div className="absolute bg-text/50 bottom-0 left-0 right-0 backdrop-blur-sm transition-all duration-500 ease-out h-0 group-hover:h-full" />
 
-                {/* Hover Content (Text on Right/Left + Button in Center) */}
+                {/* Hover Content (Text + Button grouped together in center) */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 z-10">
-                  {/* Text on Far Right/Left */}
-                  <div
-                    className={`absolute top-1/3 -translate-y-1/2 ${isRTL ? 'right-6' : 'left-6'}`}
-                  >
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
-                      {getCategoryTitle(category)}
-                    </h3>
-                    <p className="text-base md:text-lg font-semibold text-white/90">
-                      +{category.productCount} {t('categories.products')}
-                    </p>
+                  {/* Text above button */}
+                  <div className="text-center w-full mb-4">
+                    <h3 className="text-xl text-center md:text-2xl font-bold text-white max-w-[800px] mx-auto px-4">{getCategoryTitle(category)}</h3>
                   </div>
 
-                  {/* Button in Center */}
-                  <button className="bg-white text-[var(--color-text)] px-6 py-3 rounded-lg font-semibold text-base md:text-lg shadow-lg">
-                    {t('categories.viewProducts')} (+{category.productCount})
-                  </button>
+                  {/* Button */}
+                  <motion.button
+                    className="group flex items-center gap-2 px-4 py-2 cursor-pointer bg-gradient-to-r from-white/25 to-white/15 backdrop-blur-md border border-white/40 rounded-lg text-sm font-semibold text-white hover:from-white/35 hover:to-white/25 hover:border-white/50 transition-all shadow-lg hover:shadow-xl"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span>
+                      {t('categories.viewProducts')} (+{formatNumber(category.productCount)})
+                    </span>
+                    <ArrowRight size={16} className={`transition-transform duration-300 ${isRTL ? 'rotate-180' : ''} group-hover:translate-x-1`} />
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
