@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useProjectsSection } from '../../../hooks/useProjectsSection';
 import { formatNumber } from '../../../utils/numberFormat';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 const ProjectsSection = ({ hideTitle = false, projectsPage = false }) => {
   const { t, i18n } = useTranslation();
@@ -26,6 +27,14 @@ const ProjectsSection = ({ hideTitle = false, projectsPage = false }) => {
       return isRTL ? projectsData.sectionTitleAr : projectsData.sectionTitleEn;
     }
     return t('projects.title');
+  };
+
+  // Get section subtitle based on language
+  const getSectionSubtitle = () => {
+    if (projectsData) {
+      return isRTL ? projectsData.sectionSubtitleAr : projectsData.sectionSubtitleEn;
+    }
+    return null;
   };
 
   // Get project title based on language
@@ -68,16 +77,8 @@ const ProjectsSection = ({ hideTitle = false, projectsPage = false }) => {
     <section className="w-full bg-[#020617] mt-10 md:mt-16">
       {/* Title */}
       {!loading && !hideTitle && (
-        <div className="py-12 md:py-24">
-          <motion.h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-center text-white"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            {getSectionTitle()}
-          </motion.h2>
+        <div className="pt-6 md:pt-16">
+          <SectionHeader title={getSectionTitle()} subtitle={getSectionSubtitle()} align="center" color="text-white" subTitleColor="text-gray-400" />
         </div>
       )}
 

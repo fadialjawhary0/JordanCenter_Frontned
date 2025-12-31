@@ -6,6 +6,45 @@ export const useThemeSettings = () => {
   const [loading, setLoading] = useState(true);
   const { i18n } = useTranslation();
 
+  // Function to apply the correct font based on current language
+  const applyFontBasedOnLanguage = () => {
+    const root = document.documentElement;
+    const body = document.body;
+    const isRTL = i18n.language === 'ar';
+
+    if (isRTL) {
+      const fontAr = root.getAttribute('data-font-ar');
+      if (fontAr) {
+        root.style.setProperty('--font-sans', `'${fontAr}', sans-serif`);
+        // Also update body font directly and add class
+        body.style.fontFamily = `'${fontAr}', sans-serif`;
+        body.classList.add('ar-font');
+        body.classList.remove('en-font');
+      } else {
+        // Fallback to default Arabic font
+        root.style.setProperty('--font-sans', `'Cairo', sans-serif`);
+        body.style.fontFamily = `'Cairo', sans-serif`;
+        body.classList.add('ar-font');
+        body.classList.remove('en-font');
+      }
+    } else {
+      const fontEn = root.getAttribute('data-font-en');
+      if (fontEn) {
+        root.style.setProperty('--font-sans', `'${fontEn}', sans-serif`);
+        // Also update body font directly and add class
+        body.style.fontFamily = `'${fontEn}', sans-serif`;
+        body.classList.add('en-font');
+        body.classList.remove('ar-font');
+      } else {
+        // Fallback to default English font
+        root.style.setProperty('--font-sans', `'Inter', sans-serif`);
+        body.style.fontFamily = `'Inter', sans-serif`;
+        body.classList.add('en-font');
+        body.classList.remove('ar-font');
+      }
+    }
+  };
+
   useEffect(() => {
     const applyThemeSettings = async () => {
       try {
@@ -37,14 +76,16 @@ export const useThemeSettings = () => {
             root.style.setProperty('--color-ring', settings.colorRing);
           }
 
-          // Store font families for later use
+          // Store font families for later use (don't apply immediately)
           if (settings.fontFamily) {
             root.setAttribute('data-font-en', settings.fontFamily);
-            root.style.setProperty('--font-sans', `'${settings.fontFamily}', sans-serif`);
           }
           if (settings.fontFamilyAr) {
             root.setAttribute('data-font-ar', settings.fontFamilyAr);
           }
+
+          // Apply the correct font based on current language after settings are loaded
+          applyFontBasedOnLanguage();
         }
       } catch (error) {
         console.error('Failed to load theme settings, using defaults:', error);
@@ -58,22 +99,32 @@ export const useThemeSettings = () => {
 
   // Update font when language changes
   useEffect(() => {
+    // Apply font whenever language changes, checking if settings are loaded
     const root = document.documentElement;
-    const isRTL = i18n.language === 'ar';
-    
-    if (isRTL) {
-      const fontAr = root.getAttribute('data-font-ar');
-      if (fontAr) {
-        root.style.setProperty('--font-sans', `'${fontAr}', sans-serif`);
-      }
+    const hasFontEn = root.hasAttribute('data-font-en');
+    const hasFontAr = root.hasAttribute('data-font-ar');
+
+    // If settings are loaded, apply font based on language
+    if (hasFontEn || hasFontAr) {
+      applyFontBasedOnLanguage();
     } else {
-      const fontEn = root.getAttribute('data-font-en');
-      if (fontEn) {
-        root.style.setProperty('--font-sans', `'${fontEn}', sans-serif`);
+      // If settings not loaded yet, apply default fonts based on language
+      const body = document.body;
+      const isRTL = i18n.language === 'ar';
+
+      if (isRTL) {
+        root.style.setProperty('--font-sans', `'Cairo', sans-serif`);
+        body.style.fontFamily = `'Cairo', sans-serif`;
+        body.classList.add('ar-font');
+        body.classList.remove('en-font');
+      } else {
+        root.style.setProperty('--font-sans', `'Inter', sans-serif`);
+        body.style.fontFamily = `'Inter', sans-serif`;
+        body.classList.add('en-font');
+        body.classList.remove('ar-font');
       }
     }
   }, [i18n.language]);
 
   return { loading };
 };
-

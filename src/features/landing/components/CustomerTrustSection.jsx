@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useTestimonial } from '../../../hooks/useTestimonial';
 import { AnimatedTestimonials } from '../../../components/ui/animated-testimonials';
 import customerTrustImage from '../../../assets/customer-trust.jpg';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 const CustomerTrustSection = () => {
   const { t, i18n } = useTranslation();
@@ -48,22 +49,16 @@ const CustomerTrustSection = () => {
     avatar: getImageUrl(profile.imageUrl) || 'https://via.placeholder.com/150',
   }));
 
-  // Get section title
+  // Get section title and subtitle
   const sectionTitle = isRTL ? testimonialData.sectionTitleAr : testimonialData.sectionTitleEn;
+  const sectionSubtitle = isRTL ? testimonialData.sectionSubtitleAr : testimonialData.sectionSubtitleEn;
+  console.log('🚀 ~ CustomerTrustSection ~ sectionSubtitle:', sectionSubtitle);
 
   return (
     <section className="w-full py-14 md:py-20 bg-[var(--color-bg)] overflow-hidden">
       <div className="max-w-7xl mx-auto">
         {/* Section Title */}
-        <motion.h2
-          className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-4 text-[var(--color-text)] px-4"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          {sectionTitle || t('customerTrust.title')}
-        </motion.h2>
+        <SectionHeader title={sectionTitle} subtitle={sectionSubtitle} align="center" />
 
         {/* The New Component */}
         <AnimatedTestimonials testimonials={formattedTestimonials} autoplay={true} isRTL={isRTL} />

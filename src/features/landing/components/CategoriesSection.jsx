@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useCategories } from '../../../hooks/useCategories';
+import { useCategoriesSection } from '../../../hooks/useCategoriesSection';
 import { formatNumber } from '../../../utils/numberFormat';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 // Animation configuration for scroll-triggered entrance animations
 const ANIMATION_CONFIG = {
@@ -76,6 +78,7 @@ const CategoriesSection = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
   const { categories, loading, error } = useCategories();
+  const { sectionSettings } = useCategoriesSection();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -167,16 +170,12 @@ const CategoriesSection = () => {
     <section className="w-full pt-10 md:pt-16 px-4 md:px-8 bg-[var(--color-bg)]">
       <div>
         {/* Section Title */}
-        <motion.h2
-          className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 md:mb-16 text-[var(--color-text)]"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          {t('categories.title')}
-        </motion.h2>
 
+        <SectionHeader
+          title={i18n.language === 'ar' ? sectionSettings.sectionTitleAr : sectionSettings.sectionTitleEn}
+          subtitle={i18n.language === 'ar' ? sectionSettings.sectionSubtitleAr : sectionSettings.sectionSubtitleEn}
+          align="center"
+        />
         <motion.div
           className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-2 md:h-[1300px]"
           style={{

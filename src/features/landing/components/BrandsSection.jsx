@@ -3,14 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { motion, useAnimationFrame, useMotionValue } from 'framer-motion';
 import { useBrandsSection } from '../../../hooks/useBrandsSection';
 import companyLogo from '../../../assets/Company_logo.png';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 const BrandsSection = () => {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === 'ar';
 
   const { brandsData, loading } = useBrandsSection();
-
-  const sectionTitle = brandsData ? (isRTL ? brandsData.sectionTitleAr : brandsData.sectionTitleEn) : t('brands.title');
 
   const rawLogos = brandsData?.logos || [];
   const initialLogos = rawLogos.length > 0 ? rawLogos : Array(3).fill({ imageUrl: companyLogo });
@@ -127,15 +126,11 @@ const BrandsSection = () => {
     <section className="w-full pt-10 md:pt-16 bg-[var(--color-bg)]">
       <div>
         {!loading && (
-          <motion.h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-12 md:mb-16 text-[var(--color-text)]"
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            {sectionTitle}
-          </motion.h2>
+          <SectionHeader
+            title={i18n.language === 'ar' ? brandsData.sectionTitleAr : brandsData.sectionTitleEn}
+            subtitle={i18n.language === 'ar' ? brandsData.sectionSubtitleAr : brandsData.sectionSubtitleEn}
+            align="center"
+          />
         )}
 
         <div className="space-y-2 md:space-y-4 overflow-x-hidden">

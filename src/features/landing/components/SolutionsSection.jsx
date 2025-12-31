@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, ArrowUpRight, Sparkles } from 'lucide-react';
 import { useSolutions } from '../../../hooks/useSolutions';
 import { formatNumber } from '../../../utils/numberFormat';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 // --- Constants & Config ---
 // Desktop: Fixed height (75vh). Mobile: Auto height (grows with content)
@@ -180,6 +181,11 @@ const SolutionsSection = () => {
     return i18n.language === 'ar' ? sectionSettings.sectionTitleAr : sectionSettings.sectionTitleEn;
   };
 
+  const getSectionSubtitle = () => {
+    if (!sectionSettings) return null;
+    return i18n.language === 'ar' ? sectionSettings.sectionSubtitleAr : sectionSettings.sectionSubtitleEn;
+  };
+
   if (loading) {
     return (
       <section className={`w-full bg-[#020617] flex items-center justify-center min-h-[500px]`}>
@@ -214,11 +220,8 @@ const SolutionsSection = () => {
       <div className="absolute bottom-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-purple-900/10 rounded-full blur-[80px] md:blur-[128px] pointer-events-none" />
 
       {/* Header */}
-      <div className="w-full px-4 md:px-12 mb-8 md:mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-fadeInUp">
-        <div className="max-w-2xl">
-          <h2 className="text-4xl md:text-7xl font-bold text-white tracking-tighter mb-4">{getSectionTitle()}</h2>
-          <div className="h-1 md:h-2 w-16 md:w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
-        </div>
+      <div className="w-full px-4 md:px-12 mb-8 md:mb-12">
+        <SectionHeader title={getSectionTitle()} subtitle={getSectionSubtitle()} align="left" color="text-white" subTitleColor="text-gray-400" />
       </div>
 
       {/* Container: Stack Vertically on Mobile, Row on Desktop */}

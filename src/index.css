@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
 
 @import 'tailwindcss';
 
@@ -282,11 +284,15 @@ td {
 }
 
 body.ar-font {
-  font-family: 'Tajawal', 'Inter', sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 body.ar-font :lang(en) {
-  font-family: 'Inter', sans-serif !important;
+  font-family: var(--font-sans) !important;
+}
+
+body.en-font {
+  font-family: var(--font-sans) !important;
 }
 
 /* Custom utility classes */
@@ -945,5 +951,31 @@ html.accessibility-high-contrast .text-gray-400 {
 @layer utilities {
   .bg-gradient-conic {
     background-image: conic-gradient(var(--tw-gradient-stops));
+  }
+}
+
+@layer utilities {
+  /* ... your existing shimmer and conic gradient code ... */
+
+  /* 1. Define the Keyframes for the Text Gradient */
+  @keyframes gradient-x {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* 2. Create the Utility Class */
+  .animate-gradient-slow {
+    animation: gradient-x 8s ease infinite;
+    background-size: 200% auto; /* Crucial for the gradient to move */
+  }
+
+  /* 3. Optional: Helper for 3D perspective */
+  .perspective-1000 {
+    perspective: 1000px;
   }
 }

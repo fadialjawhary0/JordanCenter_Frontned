@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { ArrowUpRight, Calendar, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useArticles } from '../../../hooks/useArticles';
+import SectionHeader from '../../../components/ui/SectionHeader';
 
 const ArticlesSection = () => {
   const { t, i18n } = useTranslation();
@@ -24,6 +25,7 @@ const ArticlesSection = () => {
 
   // Helpers
   const getSectionTitle = () => (sectionSettings ? (isRTL ? sectionSettings.sectionTitleAr : sectionSettings.sectionTitleEn) : t('articles.title'));
+  const getSectionSubtitle = () => (sectionSettings ? (isRTL ? sectionSettings.sectionSubtitleAr : sectionSettings.sectionSubtitleEn) : null);
   const getArticleTitle = article => (isRTL ? article.titleAr : article.titleEn);
   const formatDate = dateString => {
     if (!dateString) return '';
@@ -55,50 +57,8 @@ const ArticlesSection = () => {
 
       <div className="relative z-10">
         {/* Header Section */}
-        <div className={`flex flex-col md:flex-row md:items-end justify-between mb-16 px-4 md:px-8 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
-          <motion.div
-            initial={{ opacity: 0, x: isRTL ? 50 : -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] }}
-            className={`flex flex-col gap-4 ${isRTL ? 'text-right' : 'text-left'}`}
-          >
-            <div className="flex items-center gap-3 text-[var(--color-text-muted)]">
-              <motion.div
-                className="h-px bg-gradient-to-r from-[var(--color-text-muted)] to-transparent"
-                initial={{ width: 0 }}
-                whileInView={{ width: 48 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              />
-              <span className="font-bold tracking-widest text-xs uppercase">{t('articles.subtitle') || 'Insights & News'}</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-[var(--color-text)] tracking-tight leading-tight">
-              {getSectionTitle()}
-            </h2>
-          </motion.div>
-
-          {/* Navigation Arrows */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex gap-3 mt-6 md:mt-0"
-          >
-            <button
-              onClick={() => scroll(isRTL ? 'next' : 'prev')}
-              className="w-12 h-12 rounded-full bg-[var(--color-card-surface2)] backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-[var(--color-bg-elev)] transition-all group"
-            >
-              <ChevronLeft size={20} className={`text-[var(--color-text)] ${isRTL ? 'rotate-180' : ''} group-hover:scale-110 transition-transform`} />
-            </button>
-            <button
-              onClick={() => scroll(isRTL ? 'prev' : 'next')}
-              className="w-12 h-12 rounded-full bg-[var(--color-card-surface2)] backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-[var(--color-bg-elev)] transition-all group"
-            >
-              <ChevronRight size={20} className={`text-[var(--color-text)] ${isRTL ? 'rotate-180' : ''} group-hover:scale-110 transition-transform`} />
-            </button>
-          </motion.div>
+        <div className={`flex flex-col md:flex-row md:items-end justify-between mb-6 px-4 md:px-8 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
+          <SectionHeader title={getSectionTitle()} subtitle={getSectionSubtitle()} align="left" />
         </div>
 
         <div className="relative">
